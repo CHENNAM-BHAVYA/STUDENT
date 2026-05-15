@@ -3,6 +3,13 @@ const router = express.Router();
 const db = require('../database/db');
 const { verifyToken, isFacultyOrAdmin } = require('../middleware/auth');
 
+router.get('/', [verifyToken, isFacultyOrAdmin], (req, res) => {
+    db.all(`SELECT m.*, s.first_name, s.last_name FROM marks m JOIN students s ON m.student_id = s.student_id`, [], (err, rows) => {
+        if (err) return res.status(500).json({ message: err.message });
+        res.json(rows);
+    });
+});
+
 router.get('/:studentId', verifyToken, (req, res) => {
     db.all(`SELECT * FROM marks WHERE student_id = ?`, [req.params.studentId], (err, rows) => {
         if (err) return res.status(500).json({ message: err.message });

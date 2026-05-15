@@ -103,7 +103,9 @@ async function loadPage(page) {
                     <div style="padding: 1.5rem; border-bottom: 1px solid var(--glass-border);">
                         <h2 style="font-size: 1.1rem;">Recent Activities</h2>
                     </div>
-                    <div style="padding: 2rem; color: var(--text-muted); text-align: center;">No recent activities to show.</div>
+                    <div id="recent-activities-list">
+                        <div style="padding: 2rem; color: var(--text-muted); text-align: center;">Loading activities...</div>
+                    </div>
                 </div>
             `;
             updateStats();
@@ -135,6 +137,35 @@ async function updateStats() {
             cards[0].innerText = Array.isArray(students) ? students.length : 0;
             cards[1].innerText = Array.isArray(faculty) ? faculty.length : 0;
             cards[2].innerText = Array.isArray(courses) ? courses.length : 0;
+        }
+
+        const activityList = document.getElementById('recent-activities-list');
+        if (activityList && Array.isArray(students)) {
+            const recent = students.slice(-5).reverse();
+            if (recent.length > 0) {
+                activityList.innerHTML = `
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align: left; background: rgba(255,255,255,0.03);">
+                                <th style="padding: 1rem 1.5rem; font-size: 0.85rem; color: var(--text-muted);">Activity</th>
+                                <th style="padding: 1rem 1.5rem; font-size: 0.85rem; color: var(--text-muted);">Details</th>
+                                <th style="padding: 1rem 1.5rem; font-size: 0.85rem; color: var(--text-muted);">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${recent.map(s => `
+                                <tr style="border-bottom: 1px solid var(--glass-border);">
+                                    <td style="padding: 1rem 1.5rem;">New Student Enrolled</td>
+                                    <td style="padding: 1rem 1.5rem;">${s.first_name} ${s.last_name}</td>
+                                    <td style="padding: 1rem 1.5rem;"><span style="color: var(--accent); background: rgba(16, 185, 129, 0.1); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem;">Completed</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                activityList.innerHTML = '<div style="padding: 2rem; color: var(--text-muted); text-align: center;">No recent activities to show.</div>';
+            }
         }
     } catch (err) {
         console.error('Failed to update stats', err);
@@ -244,7 +275,8 @@ async function loadResults() {
     const content = document.getElementById('page-content');
     const token = localStorage.getItem('token');
     try {
-        const endpoint = currentUser.role === 'student' ? `/api/marks/${currentUser.id}` : '/api/students';
+        const isAdminOrFaculty = currentUser.role === 'admin' || currentUser.role === 'faculty';
+        const endpoint = currentUser.role === 'student' ? `/api/marks/${currentUser.id}` : '/api/marks';
         const res = await fetch(endpoint, { headers: { 'x-access-token': token } });
         const data = await res.json();
 
@@ -253,6 +285,7 @@ async function loadResults() {
                 <table>
                     <thead>
                         <tr>
+                            ${isAdminOrFaculty ? '<th>Student</th>' : ''}
                             <th>Subject</th>
                             <th>Marks</th>
                             <th>Semester</th>
@@ -262,12 +295,13 @@ async function loadResults() {
                     <tbody>
                         ${Array.isArray(data) && data.length > 0 ? data.map(m => `
                             <tr>
+                                ${isAdminOrFaculty ? `<td>${m.first_name} ${m.last_name}</td>` : ''}
                                 <td>${m.subject_name}</td>
                                 <td>${m.marks}/100</td>
                                 <td>Semester ${m.semester}</td>
-                                <td><span class="action-btn" style="background: ${m.marks >= 40 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; color: ${m.marks >= 40 ? 'var(--accent)' : 'var(--danger)'}; padding: 0.2rem 0.6rem;">${m.marks >= 40 ? 'Pass' : 'Fail'}</span></td>
+                                <td><span class="action-btn" style="background: ${m.marks >= 40 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; color: ${m.marks >= 40 ? 'var(--accent)' : 'var(--danger)'}; padding: 0.2rem 0.6rem; border-radius: 4px;">${m.marks >= 40 ? 'Pass' : 'Fail'}</span></td>
                             </tr>
-                        `).join('') : '<tr><td colspan="4" style="text-align:center; padding: 2rem;">No results found.</td></tr>'}
+                        `).join('') : '<tr><td colspan="5" style="text-align:center; padding: 2rem;">No results found.</td></tr>'}
                     </tbody>
                 </table>
             </div>
