@@ -1,61 +1,39 @@
--- Database Initialization
-CREATE DATABASE IF NOT EXISTS student_management_system;
-USE student_management_system;
-
--- Courses Table
-CREATE TABLE IF NOT EXISTS courses (
-    course_id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    course_name VARCHAR(255) NOT NULL,
-    duration VARCHAR(50),
-    fees DECIMAL(10,2)
-);
-
 -- Students Table
 CREATE TABLE IF NOT EXISTS students (
-    student_id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    gender VARCHAR(20),
-    dob DATE,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    phone VARCHAR(20),
-    address TEXT,
-    course_id INTEGER,
-    FOREIGN KEY(course_id) REFERENCES courses(course_id)
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    phone TEXT,
+    enrollment_date DATE DEFAULT (DATE('now')),
+    status TEXT DEFAULT 'Active'
+);
+
+-- Users Table (for Authentication)
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    role TEXT CHECK(role IN ('admin', 'faculty', 'student')) DEFAULT 'student',
+    reference_id INTEGER -- Maps to student_id or faculty_id
 );
 
 -- Faculty Table
 CREATE TABLE IF NOT EXISTS faculty (
-    faculty_id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    faculty_name VARCHAR(100) NOT NULL,
-    department VARCHAR(100),
-    email VARCHAR(255) UNIQUE NOT NULL,
-    phone VARCHAR(20)
-);
-
--- Attendance Table
-CREATE TABLE IF NOT EXISTS attendance (
-    attendance_id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    student_id INTEGER,
-    attendance_date DATE,
-    status VARCHAR(20), -- 'Present', 'Absent'
-    FOREIGN KEY(student_id) REFERENCES students(student_id)
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    department TEXT,
+    designation TEXT
 );
 
 -- Marks Table
 CREATE TABLE IF NOT EXISTS marks (
-    mark_id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    student_id INTEGER,
-    subject_name VARCHAR(100) NOT NULL,
-    marks INTEGER,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL,
+    subject TEXT NOT NULL,
+    marks_obtained INTEGER NOT NULL,
+    total_marks INTEGER DEFAULT 100,
     semester INTEGER,
-    FOREIGN KEY(student_id) REFERENCES students(student_id)
-);
-
--- Users Table (Login & Roles)
-CREATE TABLE IF NOT EXISTS users (
-    user_id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    username VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL -- 'admin', 'faculty', 'student'
+    FOREIGN KEY (student_id) REFERENCES students(id)
 );
